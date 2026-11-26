@@ -8,7 +8,7 @@
 // merely wet. Every other planet is denser than water and has no rings to lose.
 // Run as `node main.ts` on Node 22.18 or later, which strips the types itself;
 // package.json marks the repository as an ES module so the imports below load.
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { dirname, join } from "node:path";
 
@@ -23,6 +23,7 @@ function gate(text: string): { ok: boolean; why: string; length: number } {
   if (points < 1) return { ok: false, why: "empty", length: points };
   if (points > 200) return { ok: false, why: "over 200 characters", length: points };
   if (text.includes("\n")) return { ok: false, why: "not one line", length: points };
+  if (/[\u0000-\u001f\u007f]/.test(text)) return { ok: false, why: "a control character", length: points };
   return { ok: true, why: "valid", length: points };
 }
 
@@ -36,6 +37,14 @@ const outDir = process.env.OUTPUT_DIR || "/output";
 const outFile = join(outDir, "entry.txt");
 mkdirSync(dirname(outFile), { recursive: true });
 writeFileSync(outFile, LINE, { encoding: "utf8" });
+
+// Read back, so a wrong encoding or a stray newline is caught here rather than
+// by the sealed scorer, which would list the entry invalid and pay it nothing.
+const back = readFileSync(outFile, "utf8");
+if (back !== LINE) {
+  console.error(`entry does not round-trip: ${back.length} chars read back`);
+  process.exit(1);
+}
 
 const digest = createHash("sha256").update(LINE, "utf8").digest("hex");
 console.log(`planet   Saturn`);
