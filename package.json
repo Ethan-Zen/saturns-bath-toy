@@ -1,0 +1,9 @@
+{
+  "name": "the-bath-toy",
+  "private": true,
+  "type": "module",
+  "description": "One line for make.fun's Rename the Planet bounty: Saturn, renamed The Bath Toy.",
+  "scripts": {
+    "start": "node main.ts"
+  }
+}
